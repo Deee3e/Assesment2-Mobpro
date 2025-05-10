@@ -1,66 +1,50 @@
 package com.desijihanf607062300071.assesment2.ui.screen
 
-import android.content.res.Configuration
+import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.desijihanf607062300071.assesment2.R
+import com.desijihanf607062300071.assesment2.database.MovieDb
 import com.desijihanf607062300071.assesment2.ui.theme.MyApplicationTheme
 import com.desijihanf607062300071.assesment2.util.ViewModelFactory
-import kotlinx.coroutines.launch
-import com.desijihanf607062300071.assesment2.ui.screen.CategoryDropDown
-
-
-const val KEY_ID_CATATAN = "id"
-
-data class CatatanUndo(val judul: String, val isi: String, val tanggal: String, val kategori: String)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreen(navController: NavHostController, catatanId: Int? = null) {
+fun DetailScreen(navController: NavHostController, id: Long? = null) {
     val context = LocalContext.current
+    val db = MovieDb.getInstance(context)
     val factory = ViewModelFactory(context)
-    val viewModel: FormViewModel = viewModel(factory = factory)
-    val coroutineScope = rememberCoroutineScope()
+    val viewModel: DetailViewModel = viewModel(factory = factory)
 
-    var judul by remember { mutableStateOf("") }
-    var isi by remember { mutableStateOf("") }
-    val currentDate = remember {
-        java.text.SimpleDateFormat("dd-MM-yyyy", java.util.Locale.getDefault()).format(java.util.Date())
-    }
-    var kategori by remember { mutableStateOf("Pribadi") }
-    val daftarKategori = listOf("Pribadi", "Pekerjaan", "Penting", "Lainnya")
+    var title by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
+    var platform by remember { mutableStateOf("") }
     var showDialog by remember { mutableStateOf(false) }
-    var recentlyDeleted by remember { mutableStateOf<CatatanUndo?>(null) }
-    var showUndo by remember { mutableStateOf(false) }
 
-    LaunchedEffect(catatanId) {
-        if (catatanId == null) return@LaunchedEffect
-        viewModel.getCatatanById(catatanId)?.let { data ->
-            judul = data.judul
-            isi = data.isi
-            kategori = data.kategori
-        }
+    LaunchedEffect(id) {
+        if (id == null) return@LaunchedEffect
+        val data = viewModel.getMovieById(id) ?: return@LaunchedEffect
+        title = data.judul
+        time = data.waktu
+        platform = data.platform
     }
 
     Scaffold(
@@ -76,7 +60,9 @@ fun DetailScreen(navController: NavHostController, catatanId: Int? = null) {
                     }
                 },
                 title = {
-                    Text(text = if (catatanId == null) stringResource(R.string.tambah_catatan) else stringResource(R.string.edit_catatan))
+                    Text(
+                        text = if (id == null) "Tambah Film" else "Edit Film"
+                    )
                 },
                 colors = TopAppBarDefaults.mediumTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -84,100 +70,92 @@ fun DetailScreen(navController: NavHostController, catatanId: Int? = null) {
                 ),
                 actions = {
                     IconButton(onClick = {
-                        if (judul.isBlank() || isi.isBlank()) {
-                            Toast.makeText(context, R.string.invalid, Toast.LENGTH_SHORT).show()
+                        if (title.isEmpty() || time.isEmpty() || platform.isEmpty()) {
+                            Toast.makeText(context, "Semua data wajib diisi!", Toast.LENGTH_SHORT).show()
                             return@IconButton
                         }
-                        coroutineScope.launch {
-                            if (catatanId == null) {
-                                viewModel.insertCatatan(judul, isi, currentDate, kategori)
-                            } else {
-                                viewModel.updateCatatan(catatanId, judul, isi, currentDate, kategori)
-                            }
-                            navController.popBackStack()
+
+                        if (id == null) {
+                            viewModel.insert(title, time, platform)
+                        } else {
+                            viewModel.update(id, title, time, platform)
                         }
+                        navController.popBackStack()
                     }) {
                         Icon(
-                            imageVector = Icons.Filled.Check,
+                            imageVector = Icons.Outlined.Check,
                             contentDescription = stringResource(R.string.simpan),
                             tint = MaterialTheme.colorScheme.primary
                         )
+                    }
+                    if (id != null) {
+                        DeleteAction {
+                            showDialog = true
+                        }
                     }
                 }
             )
         }
     ) { padding ->
-
-        FormCatatan(
-            title = judul,
-            onTitleChange = { judul = it },
-            desc = isi,
-            onDescChange = { isi = it },
-            kategori = kategori,
-            onKategoriChange = { kategori = it },
+        FormMovie(
+            title = title,
+            onTitleChange = { title = it },
+            time = time,
+            onTimeChange = { time = it },
+            platform = platform,
+            onPlatformChange = { platform = it },
             modifier = Modifier.padding(padding)
         )
+    }
 
-        if (catatanId != null && showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text(text = "Delete Catatan") },
-                text = { Text(text = "Are you sure you want to delete this note?") },
-                confirmButton = {
-                    Button(onClick = {
-                        recentlyDeleted = CatatanUndo(judul, isi, currentDate, kategori)
-                        showUndo = true
-                        coroutineScope.launch {
-                            viewModel.deleteCatatan(catatanId)
-                            navController.popBackStack()
-                        }
-                        showDialog = false
-                    }) {
-                        Text("Delete")
-                    }
-                },
-                dismissButton = {
-                    Button(onClick = { showDialog = false }) {
-                        Text("Cancel")
-                    }
-                }
-            )
-        }
-
-        if (showUndo && recentlyDeleted != null) {
-            Snackbar(
-                action = {
-                    Button(onClick = {
-                        coroutineScope.launch {
-                            viewModel.insertCatatan(
-                                recentlyDeleted!!.judul,
-                                recentlyDeleted!!.isi,
-                                recentlyDeleted!!.tanggal,
-                                recentlyDeleted!!.kategori
-                            )
-                        }
-                    }) {
-                        Text("Undo")
-                    }
-                },
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text("Catatan dihapus")
-            }
+    if (id != null && showDialog) {
+        DisplayAlertDialog(
+            onDismissRequest = { showDialog = false }) {
+            showDialog = false
+            viewModel.softDelete(id)
+            navController.popBackStack()
         }
     }
 }
 
 @Composable
-fun FormCatatan(
-    title: String,
-    onTitleChange: (String) -> Unit,
-    desc: String,
-    onDescChange: (String) -> Unit,
-    kategori: String,
-    onKategoriChange: (String) -> Unit,
+fun DeleteAction(delete: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+
+    IconButton(onClick = { expanded = true }) {
+        Icon(
+            imageVector = Icons.Filled.MoreVert,
+            contentDescription = stringResource(R.string.lainnya),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            DropdownMenuItem(
+                text = {
+                    Text(text = stringResource(id = R.string.hapus))
+                },
+                onClick = {
+                    expanded = false
+                    delete()
+                }
+            )
+        }
+    }
+}
+
+@Composable
+fun FormMovie(
+    title: String, onTitleChange: (String) -> Unit,
+    time: String, onTimeChange: (String) -> Unit,
+    platform: String, onPlatformChange: (String) -> Unit,
     modifier: Modifier
 ) {
+    val timeList = listOf("Pagi", "Siang", "Sore", "Malam")
+    val platformList = listOf("Netflix", "YouTube", "Disney+", "Hotstar")
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -187,39 +165,63 @@ fun FormCatatan(
         OutlinedTextField(
             value = title,
             onValueChange = onTitleChange,
-            label = { Text(text = stringResource(R.string.judul)) },
+            label = { Text("Judul Film") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Words,
                 imeAction = ImeAction.Next
             ),
             modifier = Modifier.fillMaxWidth()
         )
 
-        OutlinedTextField(
-            value = desc,
-            onValueChange = onDescChange,
-            label = { Text(text = stringResource(R.string.isi_catatan)) },
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences
-            ),
-            modifier = Modifier.fillMaxSize()
-        )
+        Text("Waktu Menonton:", style = MaterialTheme.typography.bodyMedium)
+        Column {
+            timeList.forEach { item ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onTimeChange(item) }
+                        .padding(vertical = 4.dp)
+                ) {
+                    RadioButton(
+                        selected = time == item,
+                        onClick = { onTimeChange(item) }
+                    )
+                    Text(text = item, modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+        }
 
-        // 🔽 Ganti dropdown lama dengan dropdown baru
-        CategoryDropDown(
-            selectedCategory = kategori,
-            onCategorySelected = onKategoriChange
-        )
+        Text("Platform:", style = MaterialTheme.typography.bodyMedium)
+        Box {
+            OutlinedButton(
+                onClick = { dropdownExpanded = true },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (platform.isEmpty()) "Pilih Platform" else platform)
+            }
+            DropdownMenu(
+                expanded = dropdownExpanded,
+                onDismissRequest = { dropdownExpanded = false }
+            ) {
+                platformList.forEach { item ->
+                    DropdownMenuItem(
+                        text = { Text(item) },
+                        onClick = {
+                            onPlatformChange(item)
+                            dropdownExpanded = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }
 
-
-
 @Preview(showBackground = true)
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(uiMode = UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
-fun FormScreenPreview() {
+fun DetailMovieScreenPreview() {
     MyApplicationTheme {
         DetailScreen(rememberNavController())
     }

@@ -2,21 +2,29 @@
     <string name="app_name">My Application</string>
     <string name="list_kosong">Tidak ada catatan. Tambah catatan baru.</string>
     <string name="tambah_catatan">Tambah Catatan</string>
-    <string name="judul">Judul</string>
-    <string name="isi_catatan">Isi Catatan</string>
+    <string name="ubah_catatan">Ubah Movie</string>
+    <string name="hapus_catatan">Hapus movie</string>
+    <string name="grid">Grid</string>
+    <string name="list">List</string>
+    <string name="label_nama">Judul Movie</string>
+    <string name="tambah_movie">Tambah Movie</string>
+    <string name="tambah_data_movie">Tambah Data Movie</string>
+    <string name="edit_data_movie">Edit Data Movie</string>
     <string name="kembali">Kembali</string>
-    <string name="simpan">Simpan</string>
-    <string name="edit_catatan">Edit Catatan</string>
     <string name="invalid">Judul dan isi catatan tidak boleh kosong.</string>
     <string name="lainnya">Lainnya</string>
-    <string name="hapus_catatan">Hapus Catatan</string>
+    <string name="hapus">Hapus</string>
+    <string name="simpan">Simpan</string>
+    <string name="batal">Batal</string>
     <string name="pesan_hapus">Apakah Anda yakin ingin menghapus catatan ini?</string>
     <string name="tombol_hapus">Hapus</string>
     <string name="tombol_batal">Batal</string>
-    <string name="list">List</string>
-    <string name="grid">Grid</string>
+    <string name="validasi_nama">Judul Tidak boleh kosong</string>
+    <string name="validasi_movie">Platform harus dipilih</string>
     <string name="pilih_kategori">Kategori catatan:</string>
-    <string name="hapus">Hapus</string>
-    <string name="batal">Batal</string>
+    <string name="sampah">Sampah</string>
+    <string name="pulihkan">Pulihkan</string>
+    <string name="hapus_permanen">Hapus Permanen</string>
+
 
 </resources>

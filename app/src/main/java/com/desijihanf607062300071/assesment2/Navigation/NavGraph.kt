@@ -1,5 +1,6 @@
 package com.desijihanf607062300071.assesment2.Navigation
 
+import Screen
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -8,8 +9,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.desijihanf607062300071.assesment2.ui.screen.DetailScreen
-import com.desijihanf607062300071.assesment2.ui.screen.ListScreen
+import com.desijihanf607062300071.assesment2.ui.screen.MainScreen
+import com.desijihanf607062300071.assesment2.ui.screen.TrashScreen
 
+const val KEY_MOVIE_ID = "movieId"
 
 @Composable
 fun SetupNavGraph(navController: NavHostController = rememberNavController()) {
@@ -18,35 +21,22 @@ fun SetupNavGraph(navController: NavHostController = rememberNavController()) {
         startDestination = Screen.Home.route
     ) {
         composable(route = Screen.Home.route) {
-            ListScreen(
-                navController = navController,
-            )
+            MainScreen(navController)
         }
         composable(route = Screen.FormBaru.route) {
-            DetailScreen(
-                navController = navController,
-                catatanId = null,
-            )
+            DetailScreen(navController)
         }
         composable(
             route = Screen.FormUbah.route,
             arguments = listOf(
-                navArgument(KEY_ID_CATATAN) { type = NavType.IntType }
+                navArgument(KEY_MOVIE_ID) { type = NavType.LongType }
             )
         ) { navBackStackEntry ->
-            val id = navBackStackEntry.arguments?.getInt(KEY_ID_CATATAN)
-            DetailScreen(
-                navController = navController,
-                catatanId = id,
-            )
+            val id = navBackStackEntry.arguments?.getLong(KEY_MOVIE_ID)
+            DetailScreen(navController, id)
         }
-        composable(route = Screen.RecycleBin.route) {
-            RecycleBinScreen(navController = navController)
+        composable(route = Screen.TrashScreen.route) {
+            TrashScreen(navController)
         }
     }
-}
-
-@Composable
-fun RecycleBinScreen(navController: NavHostController) {
-
 }
